@@ -1,10 +1,8 @@
 window.addEventListener("load", () => {
-    let delay = 1000;
+    let delay = 100;
     let canvasWidth = 1200;
     let canvasHeight = 600;
     let blockSize = 30;
-    let xCoord = 0;
-    let yCoord = 0;
     let radius = blockSize/2; 
     let widthInBlocks = canvasWidth / blockSize
     let heightInBlocks = canvasHeight / blockSize
@@ -12,12 +10,15 @@ window.addEventListener("load", () => {
     let ctx;
     let snakee;
     let applee;
+    let score ; 
+
   
 
   class Snake {
     constructor(body, direction) {
       this.body = body;
       this.direction = direction;
+      this.ateApple = false ;
       this.draw = () => {
         ctx.save();
         ctx.fillStyle = "#ff0000";
@@ -46,7 +47,12 @@ window.addEventListener("load", () => {
           throw "Invalid direction ";
       }
       this.body.unshift(nextPosition);
-      this.body.pop();
+      if(!this.ateApple){
+        this.body.pop();
+      }
+      else {
+         this.ateApple = false
+      }
     }
     setDirection(newDirection) {
         let allowedDirections;
@@ -89,6 +95,14 @@ window.addEventListener("load", () => {
         }
         return wallCollision || snakeCollision
     }
+    isEatingApple(appleToEat) {
+      let head = this.body[0]
+      if(head[0] === appleToEat.position[0] && head[1] === appleToEat.position[1]){
+        return true ; 
+      } else {
+        return false
+      }
+    }
   }
 
   class Apple { 
@@ -105,15 +119,45 @@ window.addEventListener("load", () => {
           ctx.fill()
           ctx.restore(); 
       }
+      setNewPosition(){
+        let newX = Math.round(Math.random() * (widthInBlocks -1))
+        let newY = Math.round(Math.random() * (heightInBlocks -1))
+        this.position = [newX, newY]
+      }
+      isOnSnake(snakeToCheck) {
+        let isOnSnake = false
+        for (let i = 0 ; i < snakeToCheck.body.length; i++){
+          if(this.position[0] === snakeToCheck.body[i][0] || this.position[1] === snakeToCheck.body[i][1]) {
+            isOnSnake = true;
+          }
+        }
+      }
   }
   init();
   function init() {
     canvas = document.createElement("canvas");
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
-    canvas.style.border = "1px solid";
+    canvas.style.border = "30px solid lightGray";
+    canvas.style.margin = "50px auto";
+    canvas.style.display = "block"
     document.body.appendChild(canvas);
     ctx = canvas.getContext("2d");
+    snakee = new Snake(
+      [
+        [6, 4],
+        [5, 4],
+        [4, 4],
+      ],
+      "right"
+      );
+      applee = new Apple([10 , 10]);
+      score = 0;
+      refreshCanvas();
+  }
+
+  function restart(){
+    score = 0;
     snakee = new Snake(
       [
         [6, 4],
@@ -132,15 +176,39 @@ window.addEventListener("load", () => {
     ctx.fillRect(x, y, blockSize, blockSize);
   }
 
+  function drawScore(){
+    ctx.save();
+    ctx.fillText(score.toString() , 5 , canvasHeight - 5)
+    ctx.restore();
+  }
+  
+  function gameOver() {
+    ctx.save()
+    ctx.fillText("Game Over " , 5 , 15)
+    ctx.fillText("Press escape to replay" , 5 , 30)
+    ctx.restore()
+  }
+
   function refreshCanvas() {
-      snakee.advance();
+    snakee.advance();
+    drawScore();
       if(snakee.checkCollisions()){
           //Game over
+          gameOver();
         } else { 
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-            applee.draw();
-            snakee.draw();
-            setTimeout(refreshCanvas, delay);
+          if (snakee.isEatingApple(applee)) {
+            score++;
+            snakee.ateApple = true
+            do {
+              applee.setNewPosition();
+            }
+            while(applee.isOnSnake(snakee))
+          }
+          
+          ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+          applee.draw();
+          snakee.draw();
+          setTimeout(refreshCanvas, delay);
     }
   }
 
@@ -161,6 +229,8 @@ window.addEventListener("load", () => {
         case "ArrowDown" : 
             newDirection = "down" ;
             break;
+        case "Escape" : 
+            restart();
         default:
             return;
     }
