@@ -2,7 +2,7 @@ import Snake from './snake.js';
 import Apple from './apple.js'; 
 import Drawing from './draw.js' ; 
 export default class Game { 
-    constructor(canvasWidth = 1200, canvasHeight = 900) {
+    constructor(canvasWidth = 1200, canvasHeight = 1000) {
       this.delay = 50;
       this.canvasWidth = canvasWidth;
       this.canvasHeight = canvasHeight;
